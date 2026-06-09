@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("agent")
+  phone     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties Property[] @relation("AgentProperties")
+  clients    Client[]  @relation("AgentClients")
+  deals      Deal[]    @relation("AgentDeals")
+}
+
+model Property {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        String   // apartment, villa, plot, commercial
+  status      String   @default("available") // available, sold, rented, reserved
+  price       Float
+  area        Float?
+  bedrooms    Int?
+  bathrooms   Int?
+  address     String
+  city        String
+  state       String?
+  pincode     String?
+  images      String?  // JSON array of image URLs
+  featured    Boolean  @default(false)
+
+  agentId     String
+  agent       User     @relation("AgentProperties", fields: [agentId], references: [id])
+
+  deals       Deal[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String
+  type      String   @default("buyer") // buyer, seller, tenant, landlord
+  budget    Float?
+  notes     String?
+
+  agentId   String
+  agent     User     @relation("AgentClients", fields: [agentId], references: [id])
+
+  deals     Deal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Deal {
+  id         String   @id @default(cuid())
+  title      String
+  stage      String   @default("lead") // lead, viewing, negotiation, closed_won, closed_lost
+  amount     Float?
+  notes      String?
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id])
+
+  agentId    String
+  agent      User     @relation("AgentDeals", fields: [agentId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  type      String   // call, email, meeting, viewing, note
+  notes     String
+  dealId    String?
+  clientId  String?
+  agentId   String
+  createdAt DateTime @default(now())
+}
